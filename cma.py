@@ -54,6 +54,10 @@ class Lang(object):
                  '脚本将记录backtrace信息。')
         self.add('Script will not backtrace infomation.',
                  '脚本将不记录backtrace信息。')
+        self.add("Which memory function do you want to record?",
+                 "记录哪个内存函数？")
+        self.add('Script will record memory function "%s".',
+                 '脚本将记录内存函数“%s”。')
 
     def set_language(self, language):
         if language != "":
@@ -178,6 +182,14 @@ def get_language_callback():
 config_check_show("misc", "language", get_language_callback, "Language is set to %s.")
 lang = Lang()
 lang.set_language(Config.get("misc", "language"))
+#misc memory_function
+def get_memory_function_callback():
+    return select_from_list(("Malloc Free", "New Delete"), "", lang.string("Which memory function do you want to record?"))
+config_check_show("misc", "memory_function", get_memory_function_callback, lang.string('Script will record memory function "%s".'))
+if Config.get("misc", "memory_function") == "Malloc Free":
+    memory_function = 0
+else:
+    memory_function = 1
 #misc record_dir
 def get_record_dir_callback():
     default = os.path.realpath("./cma.csv")
@@ -221,6 +233,26 @@ if record_bt:
     file_header += ", '" + lang.string("Allocate backtrace") + "', '" + lang.string("Release backtrace") + "'"
 file_header += "\n"
 
+#Clear old breakppints
+if memory_function == 0:
+    try:
+        gdb.execute("clear malloc")
+    except:
+        pass
+    try:
+        gdb.execute("clear free")
+    except:
+        pass
+else:
+    try:
+        gdb.execute("clear operator new")
+    except:
+        pass
+    try:
+        gdb.execute("clear operator delete")
+    except:
+        pass
+
 #Check if GDB should use "start" first
 need_run = False
 try:
@@ -250,8 +282,12 @@ signal.siginterrupt(signal.SIGINT, False);
 gdb.events.stop.connect(inferior_sig_handler)
 
 #Setup breakpoint
-gdb.execute("b operator new", False, False)
-gdb.execute("b operator delete", False, False)
+if memory_function == 0:
+    gdb.execute("b malloc", False, False)
+    gdb.execute("b free", False, False)
+else:
+    gdb.execute("b operator new", False, False)
+    gdb.execute("b operator delete", False, False)
 while run:
     try:
         gdb.execute("continue", True)
@@ -260,12 +296,20 @@ while run:
         print(lang.string("Inferior exec failed:"), x)
         break
 
-    if s.find("<operator new(") > 0:
-        is_alloc = True
-    elif s.find("<operator delete(") > 0:
-        is_alloc = False
+    if memory_function == 0:
+        if s.find("<malloc>") > 0:
+            is_alloc = True
+        elif s.find("<free>") > 0:
+            is_alloc = False
+        else:
+            continue
     else:
-        continue
+        if s.find("<operator new(") > 0:
+            is_alloc = True
+        elif s.find("<operator delete(") > 0:
+            is_alloc = False
+        else:
+            continue
 
     if is_alloc:
         #alloc size
