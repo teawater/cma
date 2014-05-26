@@ -44,6 +44,16 @@ class Lang(object):
                  "被调试程序执行出错：")
         self.add('Memory infomation saved into "%s".',
                  '内存信息存入“%s”。')
+        self.add('File for record info is "%s".',
+                 '记录文件是“%s”。')
+        self.add('Script will record infomation of released memory.',
+                 '脚本将记录已经被释放掉的内存信息。')
+        self.add('Script will not record infomation of released memory.',
+                 '脚本将不记录已经被释放掉的内存信息。')
+        self.add('Script will backtrace infomation.',
+                 '脚本将记录backtrace信息。')
+        self.add('Script will not backtrace infomation.',
+                 '脚本将不记录backtrace信息。')
 
     def set_language(self, language):
         if language != "":
@@ -113,11 +123,19 @@ def config_write():
     Config.write(fp)
     fp.close()
 
-def config_check(section, option, callback):
+def config_check_show(section, option, callback, show1=None, show2=None):
     if not Config.has_section(section):
         Config.add_section(section)
     if not Config.has_option(section, option):
         Config.set(section, option, callback())
+    else:
+        if show2 == None:
+            print (show1 %Config.get(section, option))
+        else:
+            if Config.get(section, option) == "True":
+                print show1
+            else:
+                print show2
 
 def record_save():
     #File format:
@@ -157,7 +175,7 @@ except Exception, x:
 #misc language
 def get_language_callback():
     return select_from_list(("English", "Chinese"), "", "Which language do you want to use?")
-config_check("misc", "language", get_language_callback)
+config_check_show("misc", "language", get_language_callback, "Language is set to %s.")
 lang = Lang()
 lang.set_language(Config.get("misc", "language"))
 #misc record_dir
@@ -175,17 +193,17 @@ def get_record_dir_callback():
             continue
         break
     return ret
-config_check("misc", "record_dir", get_record_dir_callback)
+config_check_show("misc", "record_dir", get_record_dir_callback, lang.string('File for record info is "%s".'))
 record_dir = Config.get("misc", "record_dir")
 #misc record_released
 def get_record_released_callback():
     return str(yes_no(lang.string("Record the infomation of released memory?")))
-config_check("misc", "record_released", get_record_released_callback)
+config_check_show("misc", "record_released", get_record_released_callback, lang.string('Script will record infomation of released memory.'), lang.string('Script will not record infomation of released memory.'))
 record_released = bool(Config.get("misc", "record_released"))
 #misc record_bt
 def get_record_bt_callback():
     return str(yes_no(lang.string("Record backtrace infomation?")))
-config_check("misc", "record_bt", get_record_bt_callback)
+config_check_show("misc", "record_bt", get_record_bt_callback, lang.string('Script will backtrace infomation.'), lang.string('Script will not backtrace infomation.'))
 record_bt = bool(Config.get("misc", "record_bt"))
 config_write()
 
