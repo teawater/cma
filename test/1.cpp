@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdlib.h>
 using namespace std;
 
 class	test {
@@ -123,12 +124,14 @@ test2::cool6()
 int
 main(int argc,char *argv[],char *envp[])
 {
+    void *a=malloc(20);
 	test3::init();
 
 	test3::a->b();
 
 	delete test3::a;
 	//delete test3::b;
+    //free(a);
 
 	while(1);
 

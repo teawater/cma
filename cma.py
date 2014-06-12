@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import gdb
-import os, signal, ConfigParser, time, signal
+import os, signal, ConfigParser, time, signal, re
 
 class Lang(object):
     '''Language class.'''
@@ -18,6 +18,8 @@ class Lang(object):
                  "记录释放掉的内存的信息？")
         self.add("Record backtrace infomation?",
                  "记录backtrace信息？")
+        self.add("Type",
+                 "类型")
         self.add("Address",
                  "地址")
         self.add("Size",
@@ -142,27 +144,53 @@ def config_check_show(section, option, callback, show1=None, show2=None):
                 print show2
 
 def record_save():
-    #File format:
-    #addr, size, existence time, allocate line, release line, [allocate bt, release bt]
+    # File format:
+    # new/malloc, addr, size, existence time, allocate line, release line, [allocate bt, release bt]
     f = open(record_dir, "w")
     f.write(file_header)
     cur = time.time()
+
     for addr in no_released:
-        line = "'0x%x', '%d', '%f', '%s', ''" %(addr, no_released[addr][0], cur - no_released[addr][2], no_released[addr][1])
+        line = "'%s', '0x%x', '%d', '%f', '%s', ''" %("new" if no_released[addr][3] else "malloc", addr, no_released[addr][0], cur - no_released[addr][2], no_released[addr][1])
         if record_bt:
-            line += ", '%s', ''" %no_released[addr][3]
+            line += ", '%s', ''" %no_released[addr][4]
         line += "\n"
         f.write(line)
+
+    f.write("\n")
+
     for e in released:
-        line = "'0x%x', '%d', '%f', '%s', '%s'" %(e[0], e[1], e[4], e[2], e[3])
+        line = "'%s', '0x%x', '%d', '%f', '%s', '%s'" %("new" if e[5] else "malloc", e[0], e[1], e[4], e[2], e[3])
         if record_bt:
-            line += ", '%s', '%s'" %(e[5], e[6])
+            line += ", '%s', '%s'" %(e[6], e[7])
         line += "\n"
         f.write(line)
     f.close()
     print(lang.string('Memory infomation saved into "%s".') %record_dir)
 
-#Load config
+def function_is_available(fun):
+    s = gdb.execute("b " + fun, False, True)
+    error_s = 'Function "' + fun + '" not defined.'
+    if s[:len(error_s)] == error_s:
+        return False
+    return True
+
+# Do "start" if need.
+try:
+    gdb.execute("info reg", True, True)
+except gdb.error, x:
+    gdb.execute("start", True, True)
+
+# Check if current application has malloc and new.
+have_malloc = function_is_available("malloc")
+have_new = function_is_available("operator new")
+if not have_malloc and not have_new:
+    raise Exception("Inferior doesn't have new and malloc.")
+
+# Clear old breakppints.
+gdb.execute("delete")
+
+# Load config
 default_config_dir = os.path.realpath("./cma.conf")
 config_dir = raw_input("Please Input the config file:[" + default_config_dir + "]")
 if len(config_dir) == 0:
@@ -176,21 +204,13 @@ except Exception, x:
     except:
         print("Cannot write config file.")
         exit(-1)
-#misc language
+# misc language
 def get_language_callback():
     return select_from_list(("English", "Chinese"), "", "Which language do you want to use?")
 config_check_show("misc", "language", get_language_callback, "Language is set to %s.")
 lang = Lang()
 lang.set_language(Config.get("misc", "language"))
-#misc memory_function
-def get_memory_function_callback():
-    return select_from_list(("Malloc Free", "New Delete"), "", lang.string("Which memory function do you want to record?"))
-config_check_show("misc", "memory_function", get_memory_function_callback, lang.string('Script will record memory function "%s".'))
-if Config.get("misc", "memory_function") == "Malloc Free":
-    memory_function = 0
-else:
-    memory_function = 1
-#misc record_dir
+# misc record_dir
 def get_record_dir_callback():
     default = os.path.realpath("./cma.csv")
     while True:
@@ -207,58 +227,50 @@ def get_record_dir_callback():
     return ret
 config_check_show("misc", "record_dir", get_record_dir_callback, lang.string('File for record info is "%s".'))
 record_dir = Config.get("misc", "record_dir")
-#misc record_released
+# misc record_released
 def get_record_released_callback():
     return str(yes_no(lang.string("Record the infomation of released memory?")))
 config_check_show("misc", "record_released", get_record_released_callback, lang.string('Script will record infomation of released memory.'), lang.string('Script will not record infomation of released memory.'))
 record_released = bool(Config.get("misc", "record_released"))
-#misc record_bt
+# misc record_bt
 def get_record_bt_callback():
     return str(yes_no(lang.string("Record backtrace infomation?")))
 config_check_show("misc", "record_bt", get_record_bt_callback, lang.string('Script will backtrace infomation.'), lang.string('Script will not backtrace infomation.'))
 record_bt = bool(Config.get("misc", "record_bt"))
 config_write()
 
+# Get memory_function.
+# 0 malloc
+# 1 new
+# 2 malloc and new
+if have_malloc and have_new:
+    m = select_from_list(("malloc/free and new/delete", "malloc/free", "new/delete"), "", lang.string("Which memory function do you want to record?"))
+    if m == "malloc/free and new/delete":
+        memory_function = 2
+    elif m == "malloc/free":
+        memory_function = 0
+    else:
+        memory_function = 1
+elif have_malloc:
+    memory_function = 0
+    print(lang.string('Script will record memory function "%s".') %"malloc/free")
+else:
+    memory_function = 1
+    print(lang.string('Script will record memory function "%s".') %"new/delete")
+
 gdb.execute("set pagination off", False, False)
 
 run = True
 
-#Format: size, line, time, [bt]
+# Format: size, line, time, is_new, [bt]
 no_released = {}
-#Format: addr, size, allocate_line, release_line, time, [allocate_bt, release_bt]
+# Format: addr, size, allocate_line, release_line, time, is_new, [allocate_bt, release_bt]
 released = []
 
-file_header = "'" + lang.string("Address") + "', '" + lang.string("Size") + "', '" + lang.string("Existence time") + "', '" + lang.string("Allocate line") + "', '" + lang.string("Release line") + "'"
+file_header = "'" + lang.string("Type") + "', '" + lang.string("Address") + "', '" + lang.string("Size") + "', '" + lang.string("Existence time") + "', '" + lang.string("Allocate line") + "', '" + lang.string("Release line") + "'"
 if record_bt:
     file_header += ", '" + lang.string("Allocate backtrace") + "', '" + lang.string("Release backtrace") + "'"
 file_header += "\n"
-
-#Clear old breakppints
-if memory_function == 0:
-    try:
-        gdb.execute("clear malloc")
-    except:
-        pass
-    try:
-        gdb.execute("clear free")
-    except:
-        pass
-else:
-    try:
-        gdb.execute("clear operator new")
-    except:
-        pass
-    try:
-        gdb.execute("clear operator delete")
-    except:
-        pass
-
-#Check if GDB should use "start" first
-need_run = False
-try:
-    gdb.execute("info reg", True, True)
-except gdb.error, x:
-    gdb.execute("start", True, True)
 
 s_operations = (lang.string('Record memory infomation to "%s".') %record_dir,
                 lang.string("Continue."),
@@ -281,13 +293,14 @@ signal.siginterrupt(signal.SIGINT, False);
 
 gdb.events.stop.connect(inferior_sig_handler)
 
-#Setup breakpoint
-if memory_function == 0:
+# Setup breakpoint
+if memory_function == 0 or memory_function == 2:
     gdb.execute("b malloc", False, False)
     gdb.execute("b free", False, False)
-else:
+if memory_function == 1 or memory_function == 2:
     gdb.execute("b operator new", False, False)
     gdb.execute("b operator delete", False, False)
+
 while run:
     try:
         gdb.execute("continue", True)
@@ -296,50 +309,56 @@ while run:
         print(lang.string("Inferior exec failed:"), x)
         break
 
-    if memory_function == 0:
-        if s.find("<malloc>") > 0:
+    r = re.search(r'(<malloc>|<free>|<operator new\(|<operator delete\()', s)
+    if not bool(r):
+        continue
+    r = r.group(1)
+
+    if memory_function == 0 or memory_function == 2:
+        if r == "<malloc>":
             is_alloc = True
-        elif s.find("<free>") > 0:
+            is_new = False
+        elif r == "<free>":
             is_alloc = False
-        else:
-            continue
-    else:
-        if s.find("<operator new(") > 0:
+            is_new = False
+    if memory_function == 1 or memory_function == 2:
+        if r == "<operator new(":
             is_alloc = True
-        elif s.find("<operator delete(") > 0:
+            is_new = True
+        elif r == "<operator delete(":
             is_alloc = False
-        else:
-            continue
+            is_new = True
 
     if is_alloc:
-        #alloc size
+        # alloc size
         size = long(gdb.parse_and_eval("$rdi"))
         gdb.execute("disable", False, False)
         gdb.execute("finish", False, True)
         gdb.execute("enable", False, False)
-        #alloc addr
+        # alloc addr
         addr = long(gdb.parse_and_eval("$rax"))
-        #alloc size
+        # alloc size
         no_released[addr] = []
         no_released[addr].append(size)
-        #alloc line
+        # alloc line
         no_released[addr].append(str(gdb.execute("info line", True, True)).strip())
-        #alloc bt to bt
+        no_released[addr].append(is_new)
+        # alloc bt to bt
         if record_bt:
             bt = str(gdb.execute("backtrace", True, True)).strip()
         no_released[addr].append(time.time())
         if record_bt:
             no_released[addr].append(bt)
     else:
-        #release addr
+        # release addr
         addr = long(gdb.parse_and_eval("$rdi"))
         if addr in no_released:
             if record_released:
                 cur_time = time.time()
                 gdb.execute("up", False, True)
-                #addr, size, allocate_line, release_line, time
-                add = [addr, no_released[addr][0], no_released[addr][1], str(gdb.execute("info line", True, True)).strip(), cur_time - no_released[addr][2]]
-                #bt
+                # addr, size, allocate_line, release_line, time
+                add = [addr, no_released[addr][0], no_released[addr][1], str(gdb.execute("info line", True, True)).strip(), cur_time - no_released[addr][2], is_new]
+                # bt
                 if record_bt:
                     add.append(no_released[addr][3])
                     add.append(str(gdb.execute("backtrace", True, True)).strip())
