@@ -342,11 +342,11 @@ while run:
         no_released[addr].append(size)
         # alloc line
         no_released[addr].append(str(gdb.execute("info line", True, True)).strip())
-        no_released[addr].append(is_new)
         # alloc bt to bt
         if record_bt:
             bt = str(gdb.execute("backtrace", True, True)).strip()
         no_released[addr].append(time.time())
+        no_released[addr].append(is_new)
         if record_bt:
             no_released[addr].append(bt)
     else:
