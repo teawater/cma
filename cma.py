@@ -24,8 +24,8 @@ class Lang(object):
                  "地址")
         self.add("Size",
                  "长度")
-        self.add("Existence time",
-                 "存在时间")
+        self.add("Existence time(sec)",
+                 "存在时间(秒)")
         self.add("Allocate line",
                  "分配行")
         self.add("Release line",
@@ -267,7 +267,7 @@ no_released = {}
 # Format: addr, size, allocate_line, release_line, time, is_new, [allocate_bt, release_bt]
 released = []
 
-file_header = "'" + lang.string("Type") + "', '" + lang.string("Address") + "', '" + lang.string("Size") + "', '" + lang.string("Existence time") + "', '" + lang.string("Allocate line") + "', '" + lang.string("Release line") + "'"
+file_header = "'" + lang.string("Type") + "', '" + lang.string("Address") + "', '" + lang.string("Size") + "', '" + lang.string("Existence time(sec)") + "', '" + lang.string("Allocate line") + "', '" + lang.string("Release line") + "'"
 if record_bt:
     file_header += ", '" + lang.string("Allocate backtrace") + "', '" + lang.string("Release backtrace") + "'"
 file_header += "\n"
