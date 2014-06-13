@@ -175,11 +175,41 @@ def function_is_available(fun):
         return False
     return True
 
+class arch_x86_32(object):
+    def is_current():
+        if gdb.execute("info reg", True, True).find("eax") >= 0:
+            return True
+        return False
+    def get_arg1():
+        return long(gdb.parse_and_eval("*(unsigned long *)($ebp+8)"))
+    def get_ret():
+        return long(gdb.parse_and_eval("$eax"))
+
+class arch_x86_64(object):
+    def is_current():
+        if gdb.execute("info reg", True, True).find("rax") >= 0:
+            return True
+        return False
+    def get_arg1():
+        return long(gdb.parse_and_eval("$rdi"))
+    def get_ret():
+        return long(gdb.parse_and_eval("$rax"))
+
+archs = (arch_x86_32, arch_x86_64)
+
 # Do "start" if need.
 try:
     gdb.execute("info reg", True, True)
 except gdb.error, x:
     gdb.execute("start", True, True)
+
+# Get arch.
+for e in archs:
+    arch = e()
+    if arch.is_current():
+        break
+else:
+    raise Exception("Current architecture is not supported by CMA.")
 
 # Check if current application has malloc and new.
 have_malloc = function_is_available("malloc")
@@ -331,12 +361,12 @@ while run:
 
     if is_alloc:
         # alloc size
-        size = long(gdb.parse_and_eval("$rdi"))
+        size = arch.get_arg1()
         gdb.execute("disable", False, False)
         gdb.execute("finish", False, True)
         gdb.execute("enable", False, False)
         # alloc addr
-        addr = long(gdb.parse_and_eval("$rax"))
+        addr = arch.get_ret()
         # alloc size
         no_released[addr] = []
         no_released[addr].append(size)
@@ -351,7 +381,7 @@ while run:
             no_released[addr].append(bt)
     else:
         # release addr
-        addr = long(gdb.parse_and_eval("$rdi"))
+        addr = arch.get_arg1()
         if addr in no_released:
             if record_released:
                 cur_time = time.time()
