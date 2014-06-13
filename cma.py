@@ -357,10 +357,10 @@ while run:
                 cur_time = time.time()
                 gdb.execute("up", False, True)
                 # addr, size, allocate_line, release_line, time
-                add = [addr, no_released[addr][0], no_released[addr][1], str(gdb.execute("info line", True, True)).strip(), cur_time - no_released[addr][2], is_new]
+                add = [addr, no_released[addr][0], no_released[addr][1], str(gdb.execute("info line", True, True)).strip(), cur_time - no_released[addr][2], no_released[addr][3]]
                 # bt
                 if record_bt:
-                    add.append(no_released[addr][3])
+                    add.append(no_released[addr][4])
                     add.append(str(gdb.execute("backtrace", True, True)).strip())
                 released.append(add)
                 gdb.execute("down", False, True)
