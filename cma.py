@@ -176,23 +176,23 @@ def function_is_available(fun):
     return True
 
 class arch_x86_32(object):
-    def is_current():
+    def is_current(self):
         if gdb.execute("info reg", True, True).find("eax") >= 0:
             return True
         return False
-    def get_arg1():
+    def get_arg1(self):
         return long(gdb.parse_and_eval("*(unsigned long *)($ebp+8)"))
-    def get_ret():
+    def get_ret(self):
         return long(gdb.parse_and_eval("$eax"))
 
 class arch_x86_64(object):
-    def is_current():
+    def is_current(self):
         if gdb.execute("info reg", True, True).find("rax") >= 0:
             return True
         return False
-    def get_arg1():
+    def get_arg1(self):
         return long(gdb.parse_and_eval("$rdi"))
-    def get_ret():
+    def get_ret(self):
         return long(gdb.parse_and_eval("$rax"))
 
 archs = (arch_x86_32, arch_x86_64)
@@ -339,16 +339,16 @@ while run:
         print(lang.string("Inferior exec failed:"), x)
         break
 
-    r = re.search(r'(<malloc>|<free>|<operator new\(|<operator delete\()', s)
+    r = re.search(r'(<malloc|<free|<operator new\(|<operator delete\()', s)
     if not bool(r):
         continue
     r = r.group(1)
 
     if memory_function == 0 or memory_function == 2:
-        if r == "<malloc>":
+        if r == "<malloc":
             is_alloc = True
             is_new = False
-        elif r == "<free>":
+        elif r == "<free":
             is_alloc = False
             is_new = False
     if memory_function == 1 or memory_function == 2:
