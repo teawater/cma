@@ -63,10 +63,10 @@ class Lang(object):
 
     def set_language(self, language):
         if language != "":
-            if language[0] == "e" or language[0] == "E":
-                self.language = "en"
-            else:
+            if language[0] == "c" or language[0] == "C":
                 self.language = "cn"
+            else:
+                self.language = "en"
             self.is_set = True
 
     def add(self, en, cn):
