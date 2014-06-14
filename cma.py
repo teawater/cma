@@ -175,6 +175,18 @@ def function_is_available(fun):
         return False
     return True
 
+def sigint_handler(num=None, e=None):
+    global run
+    a = select_from_list(s_operations, s_operations[0], lang.string("Which operation?"))
+    if a == s_operations[0]:
+        record_save()
+    elif a == s_operations[2]:
+        run = False
+
+def inferior_sig_handler(event):
+    if type(event) == gdb.SignalEvent and str(event.stop_signal) == "SIGINT":
+        sigint_handler()
+
 class arch_x86_32(object):
     def is_current(self):
         if gdb.execute("info reg", True, True).find("eax") >= 0:
@@ -306,23 +318,6 @@ s_operations = (lang.string('Record memory infomation to "%s".') %record_dir,
                 lang.string("Continue."),
                 lang.string('Quit.'))
 
-def sigint_handler(num=None, e=None):
-    global run
-    a = select_from_list(s_operations, s_operations[0], lang.string("Which operation?"))
-    if a == s_operations[0]:
-        record_save()
-    elif a == s_operations[2]:
-        run = False
-
-def inferior_sig_handler(event):
-    if type(event) == gdb.SignalEvent and str(event.stop_signal) == "SIGINT":
-        sigint_handler()
-
-signal.signal(signal.SIGINT, sigint_handler);
-signal.siginterrupt(signal.SIGINT, False);
-
-gdb.events.stop.connect(inferior_sig_handler)
-
 # Setup breakpoint
 if memory_function == 0 or memory_function == 2:
     gdb.execute("b malloc", False, False)
@@ -330,6 +325,11 @@ if memory_function == 0 or memory_function == 2:
 if memory_function == 1 or memory_function == 2:
     gdb.execute("b operator new", False, False)
     gdb.execute("b operator delete", False, False)
+
+signal.signal(signal.SIGINT, sigint_handler);
+signal.siginterrupt(signal.SIGINT, False);
+
+gdb.events.stop.connect(inferior_sig_handler)
 
 while run:
     try:
@@ -400,3 +400,5 @@ while run:
         gdb.execute("enable", False, False)
 
 record_save()
+
+gdb.events.stop.disconnect(inferior_sig_handler)
