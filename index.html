@@ -53,7 +53,7 @@ CMA supports X86_32 and X86_64.
 <tr>
 <td style="vertical-align: top;">
 <ol>
-   <li> CMA just can work with GDB 7.5 or newer version.  You can use <a href="http://teawater.github.io/get-gdb/">Get-GDB</a> check the version of GDB in current system and get GDB 7.5 or newer version if you need.
+   <li> CMA just can work with GDB 7.5 or newer version.  You can use <a href="http://teawater.github.io/get-gdb/">Get-GDB</a> check the version of GDB in current system and get GDB 7.5 or newer version if need.
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -80,7 +80,7 @@ wget https://raw.githubusercontent.com/teawater/cma/master/cma.py
 </li>
 
 <li>
-Make sure C/C++ application that want to analyzes is built with GCC "-g" option to get the memory allocate and release code line infomation.
+C/C++ application that want to analyzes should be built with GCC "-g" option to get the memory allocate and release code line infomation.
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -95,10 +95,10 @@ g++ -g xxx
 </li>
 
 <li>
-Make sure GDB control the C/C++ application that want to analyzes.<br>
+GDB control the C/C++ application that want to analyzes.<br>
 There are some ways:
 <ul>
-   <li> Open GDB with a application.(Doesn't need start application because CMA script will auto do it if need.)
+   <li> Open GDB with a application.  Don't need execute application because CMA script will auto do it if need.
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -155,7 +155,8 @@ source cma.py
 </li>
 
 <li>
-When CMA script is running, you can use CTRL-C interrupt its execution and control it.
+When CMA script and application is running, you can use CTRL-C interrupt their execution. Then, you can let CMA script save record to a CSV file.<br>
+CSV file can be read by Openoffice or Excel.
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -167,7 +168,7 @@ border="0" cellpadding="0" cellspacing="0">
 [2] Quit.<br>
 Which operation?[0]<br>
 Memory infomation saved into "/home/teawater/tmp/cma.csv".<br>
-Continuing.<br>
+Continuing.
 </td>
 </tbody>
 </table>
@@ -188,7 +189,7 @@ Continuing.<br>
 </tr>
 
 <tr align="center">
-<td style="vertical-align: top;">This is a screenshot of a cma.csv.<br>
+<td style="vertical-align: top;">This is a screenshot of a CSV file.<br>
 <a href="eb.png"><IMG src="es.png" align="" border="0"></a>
 </td>
 </tr>

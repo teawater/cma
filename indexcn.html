@@ -53,7 +53,7 @@ CMA 支持 X86_32 和 X86_64。
 <tr>
 <td style="vertical-align: top;">
 <ol>
-   <li> CMA只能和GDB 7.5 and newer version.  You can use <a href="http://teawater.github.io/get-gdb/">Get-GDB</a> check the version of GDB in current system and get GDB 7.5 or newer version if you need.
+   <li>CMA只能和GDB 7.5或者更新版本。你可以用<a href="http://teawater.github.io/get-gdb/">Get-GDB</a>检查当前系统的GDB版本并根据需要GDB 7.5或者更新版本。
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -66,7 +66,7 @@ python get-gdb.py
 </tbody>
 </table>
 </li>
-   <li> Get CMA.
+   <li>取得CMA。
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -80,7 +80,7 @@ wget https://raw.githubusercontent.com/teawater/cma/master/cma.py
 </li>
 
 <li>
-Make sure C/C++ application that want to analyzes is built with GCC "-g" option to get the memory allocate and release code line infomation.
+分析的C/C++程序编译的时候要使用GCC的“-g”选项，这样可以取得内存分配和释放时的行信息。
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -95,10 +95,10 @@ g++ -g xxx
 </li>
 
 <li>
-Make sure GDB control the C/C++ application that want to analyzes.<br>
-There are some ways:
+GDB控制要分析的C/C++程序。
+这里有一些方法：
 <ul>
-   <li> Open GDB with a application.(Doesn't need start application because CMA script will auto do it if need.)
+   <li> 和GDB一起打开应用程序。不需要执行程序因为CMA脚本将自动根据需要执行程序。
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -111,7 +111,7 @@ gdb xxx
 </table>
 </li>
 <li>
-Attach a running application.
+Attach一个运行中的程序。
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -122,7 +122,7 @@ gdb -p pid
 </td>
 </tbody>
 </table>
-Or
+或者
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -140,8 +140,8 @@ attach pid
 </li>
 
 <li>
-Start CMA script inside GDB.<br>
-It will let you input some options.  Then, exencute application and analyzes its memory allocate and release.
+在GDB中启动CMA脚本。<br>
+其将让你输入一些选项，然后执行程序并分析其内存的分配和释放。
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
@@ -155,19 +155,20 @@ source cma.py
 </li>
 
 <li>
-When CMA script is running, you can use CTRL-C interrupt its execution and control it.
+CMA脚本和程序执行的时候，可以用CTRL-C打断他们的执行。然后可以让CMA脚本将记录保存在一个CSV文件中。<br>
+CSV文件可以被Openoffice或者Excel打开。
 <table
 style="text-align: left; width: 90%;"
 border="0" cellpadding="0" cellspacing="0">
 <tbody>
 <tr>
 <td style="vertical-align: top; background-color: rgb(238, 238, 238);">
-[0] Record memory infomation to "/home/teawater/tmp/cma.csv".<br>
-[1] Continue.<br>
-[2] Quit.<br>
-Which operation?[0]<br>
-Memory infomation saved into "/home/teawater/tmp/cma.csv".<br>
-Continuing.<br>
+[0] 记录内存信息到“/home/teawater/tmp/cma.csv”。<br>
+[1] 继续。<br>
+[2] 退出。<br>
+哪个操作？[0]<br>
+内存信息存入“/home/teawater/tmp/cma.csv”。<br>
+Continuing.
 </td>
 </tbody>
 </table>
@@ -183,13 +184,13 @@ Continuing.<br>
 </tr>
 
 <tr align="center">
-<td style="vertical-align: top;">Screenshot<br>
+<td style="vertical-align: top;">截图<br>
 </td>
 </tr>
 
 <tr align="center">
-<td style="vertical-align: top;">This is a screenshot of a cma.csv.<br>
-<a href="eb.png"><IMG src="es.png" align="" border="0"></a>
+<td style="vertical-align: top;">这是一个CSV文件的截图。<br>
+<a href="cb.png"><IMG src="cs.png" align="" border="0"></a>
 </td>
 </tr>
 
@@ -199,7 +200,7 @@ Continuing.<br>
 <br>
 
 <div style="text-align: center;">
-<a href="http://teawater.github.io/">My home page</a>
+<a href="http://teawater.github.io/indexcn.html">我的主页</a>
 </div>
 
 </body>
