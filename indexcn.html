@@ -1,0 +1,207 @@
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+<meta id="_moz_html_fragment">
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+ga('create', 'UA-581509-4', 'teawater.github.io');
+ga('send', 'pageview');
+
+</script>
+<title>C/C++ 内存分配和释放分析器 (CMA)</title>
+</head>
+<body>
+<div style="text-align: center;">
+<a href="index.html">英文</a><br>
+</div>
+<br>
+<table
+style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
+border="1" cellpadding="0" cellspacing="0">
+
+<tr align="center">
+<td style="vertical-align: top;"><a href="https://github.com/teawater/cma">https://github.com/teawater/cma</a>
+</td>
+</tr>
+
+<tr align="center">
+<td style="vertical-align: top;"><br>
+</td>
+</tr>
+
+<tr align="center">
+<td style="vertical-align: top;">什么是CMA?<br>
+</td>
+</tr>
+<tr>
+<td style="vertical-align: top;">一个分析和记录C/C++程序内存分配和释放行为的GDB Python脚本。<br>CMA 对C/C++程序的性能影响比较小。<br>
+CMA 支持 X86_32 和 X86_64。
+</td>
+</tr>
+<tr align="center">
+<td style="vertical-align: top;"><br>
+</td>
+</tr>
+<tr align="center">
+<td style="vertical-align: top;">如何使用CMA?<br>
+</td>
+</tr>
+<tr>
+<td style="vertical-align: top;">
+<ol>
+   <li> CMA只能和GDB 7.5 and newer version.  You can use <a href="http://teawater.github.io/get-gdb/">Get-GDB</a> check the version of GDB in current system and get GDB 7.5 or newer version if you need.
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+wget https://raw.githubusercontent.com/teawater/get-gdb/master/get-gdb.py<br>
+python get-gdb.py
+</td>
+</tbody>
+</table>
+</li>
+   <li> Get CMA.
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+wget https://raw.githubusercontent.com/teawater/cma/master/cma.py
+</td>
+</tbody>
+</table>
+</li>
+
+<li>
+Make sure C/C++ application that want to analyzes is built with GCC "-g" option to get the memory allocate and release code line infomation.
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+gcc -g xxx<br>
+g++ -g xxx
+</td>
+</tbody>
+</table>
+</li>
+
+<li>
+Make sure GDB control the C/C++ application that want to analyzes.<br>
+There are some ways:
+<ul>
+   <li> Open GDB with a application.(Doesn't need start application because CMA script will auto do it if need.)
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+gdb xxx
+</td>
+</tbody>
+</table>
+</li>
+<li>
+Attach a running application.
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+gdb -p pid
+</td>
+</tbody>
+</table>
+Or
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+gdb<br>
+attach pid
+</td>
+</tbody>
+</table>
+
+</li>
+ </ul>
+</li>
+
+<li>
+Start CMA script inside GDB.<br>
+It will let you input some options.  Then, exencute application and analyzes its memory allocate and release.
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+source cma.py
+</td>
+</tbody>
+</table>
+</li>
+
+<li>
+When CMA script is running, you can use CTRL-C interrupt its execution and control it.
+<table
+style="text-align: left; width: 90%;"
+border="0" cellpadding="0" cellspacing="0">
+<tbody>
+<tr>
+<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+[0] Record memory infomation to "/home/teawater/tmp/cma.csv".<br>
+[1] Continue.<br>
+[2] Quit.<br>
+Which operation?[0]<br>
+Memory infomation saved into "/home/teawater/tmp/cma.csv".<br>
+Continuing.<br>
+</td>
+</tbody>
+</table>
+</li>
+</ol>
+</td>
+</tr>
+
+
+<tr align="center">
+<td style="vertical-align: top;"><br>
+</td>
+</tr>
+
+<tr align="center">
+<td style="vertical-align: top;">Screenshot<br>
+</td>
+</tr>
+
+<tr align="center">
+<td style="vertical-align: top;">This is a screenshot of a cma.csv.<br>
+<a href="eb.png"><IMG src="es.png" align="" border="0"></a>
+</td>
+</tr>
+
+</tbody>
+</table>
+
+<br>
+
+<div style="text-align: center;">
+<a href="http://teawater.github.io/">My home page</a>
+</div>
+
+</body>
+</html>
+
