@@ -4,6 +4,8 @@
 import gdb
 import os, signal, ConfigParser, time, signal, re
 
+#-----------------------------------------------------------------------
+# The language class
 class Lang(object):
     '''Language class.'''
     def __init__(self, language="en"):
@@ -77,6 +79,8 @@ class Lang(object):
             return s
         return self.data[s]
 
+#-----------------------------------------------------------------------
+# The UI functions
 def yes_no(string="", has_default=False, default_answer=True):
     if has_default:
         if default_answer:
@@ -123,7 +127,8 @@ def select_from_list(entry_list, default_entry, introduction):
         if select >= 0 and select < len(entry_list):
             break
     return entry_list[select]
-
+#-----------------------------------------------------------------------
+# The config functions
 def config_write():
     fp = open(config_dir, "w+")
     Config.write(fp)
@@ -142,7 +147,8 @@ def config_check_show(section, option, callback, show1=None, show2=None):
                 print show1
             else:
                 print show2
-
+#-----------------------------------------------------------------------
+# Functions about record file
 def record_save():
     # File format:
     # new/malloc, addr, size, existence time, allocate line, release line, [allocate bt, release bt]
@@ -168,15 +174,25 @@ def record_save():
     f.close()
     print(lang.string('Memory infomation saved into "%s".') %record_dir)
 
-def function_is_available(fun):
-    s = gdb.execute("b " + fun, False, True)
-    error_s = 'Function "' + fun + '" not defined.'
-    if s[:len(error_s)] == error_s:
-        return False
-    return True
+def init_file_header():
+    global file_header
+    file_header = "'" + lang.string("Type") + "', '" + lang.string("Address") + "', '" + lang.string("Size") + "', '" + lang.string("Existence time(sec)") + "', '" + lang.string("Allocate line") + "', '" + lang.string("Release line") + "'"
+    if record_bt:
+        file_header += ", '" + lang.string("Allocate backtrace") + "', '" + lang.string("Release backtrace") + "'"
+    file_header += "\n"
 
+# Format: size, line, time, is_new, [bt]
+no_released = {}
+# Format: addr, size, allocate_line, release_line, time, is_new, [allocate_bt, release_bt]
+released = []
+#-----------------------------------------------------------------------
+# Functions about signal
 def sigint_handler(num=None, e=None):
     global run
+
+    s_operations = (lang.string('Record memory infomation to "%s".') %record_dir,
+                    lang.string("Continue."),
+                    lang.string('Quit.'))
     a = select_from_list(s_operations, s_operations[0], lang.string("Which operation?"))
     if a == s_operations[0]:
         record_save()
@@ -186,7 +202,8 @@ def sigint_handler(num=None, e=None):
 def inferior_sig_handler(event):
     if type(event) == gdb.SignalEvent and str(event.stop_signal) == "SIGINT":
         sigint_handler()
-
+#-----------------------------------------------------------------------
+#Archs
 class arch_x86_32(object):
     def is_current(self):
         if gdb.execute("info reg", True, True).find("eax") >= 0:
@@ -208,6 +225,19 @@ class arch_x86_64(object):
         return long(gdb.parse_and_eval("$rax"))
 
 archs = (arch_x86_32, arch_x86_64)
+
+#-----------------------------------------------------------------------
+def function_is_available(fun):
+    s = gdb.execute("b " + fun, False, True)
+    error_s = 'Function "' + fun + '" not defined.'
+    if s[:len(error_s)] == error_s:
+        return False
+    return True
+
+#-----------------------------------------------------------------------
+# Real main code
+
+gdb.execute("set pagination off", False, False)
 
 # Do "start" if need.
 try:
@@ -281,6 +311,8 @@ config_check_show("misc", "record_bt", get_record_bt_callback, lang.string('Scri
 record_bt = bool(Config.get("misc", "record_bt"))
 config_write()
 
+init_file_header()
+
 # Get memory_function.
 # 0 malloc
 # 1 new
@@ -300,23 +332,7 @@ else:
     memory_function = 1
     print(lang.string('Script will record memory function "%s".') %"new/delete")
 
-gdb.execute("set pagination off", False, False)
-
 run = True
-
-# Format: size, line, time, is_new, [bt]
-no_released = {}
-# Format: addr, size, allocate_line, release_line, time, is_new, [allocate_bt, release_bt]
-released = []
-
-file_header = "'" + lang.string("Type") + "', '" + lang.string("Address") + "', '" + lang.string("Size") + "', '" + lang.string("Existence time(sec)") + "', '" + lang.string("Allocate line") + "', '" + lang.string("Release line") + "'"
-if record_bt:
-    file_header += ", '" + lang.string("Allocate backtrace") + "', '" + lang.string("Release backtrace") + "'"
-file_header += "\n"
-
-s_operations = (lang.string('Record memory infomation to "%s".') %record_dir,
-                lang.string("Continue."),
-                lang.string('Quit.'))
 
 # Setup breakpoint
 if memory_function == 0 or memory_function == 2:
@@ -326,9 +342,9 @@ if memory_function == 1 or memory_function == 2:
     gdb.execute("b operator new", False, False)
     gdb.execute("b operator delete", False, False)
 
+# Setup signal handler
 signal.signal(signal.SIGINT, sigint_handler);
 signal.siginterrupt(signal.SIGINT, False);
-
 gdb.events.stop.connect(inferior_sig_handler)
 
 while run:
