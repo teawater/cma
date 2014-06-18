@@ -179,6 +179,59 @@ Continuing.
 
 
 <tr align="center">
+<td style="vertical-align: top;">CMA脚本生成的CSV文件<br>
+</td>
+</tr>
+
+<tr>
+<td style="vertical-align: top;">
+在没被释放掉的动态内存和释放掉的动态内存之间有一个空行。<br><br>
+
+列：
+<ul>
+<li>
+<b>类型</b><br>
+动态内存的类型是new或者malloc。CMA脚本可以同时记录他们。
+</li>
+<li>
+<b>地址</b><br>
+动态内存的地址。
+</li>
+<li>
+<b>长度</b><br>
+动态内存的长度。
+</li>
+<li>
+<b>存在时间(秒)</b><br>
+动态内存的存在秒数。<br>
+如果这个动态内存已经被释放掉了，其是动态内存从分配到释放的时间。<br>
+如果这个动态内存没被释放掉，其是动态内存从分配到当前的时间。<br>
+</li>
+<li>
+<b>分配行</b><br>
+分配动态内存的代码行信息。
+</li>
+<li>
+<b>释放行</b><br>
+释放动态内存的代码行信息。<br>
+如果这个动态内存没有被释放掉，则这个列是空的。
+</li>
+<li>
+<b>分配backtrace</b><br>
+分配动态内存的分配行的backtrace信息。
+</li>
+<li>
+<b>释放backtrace</b><br>
+分配动态内存的释放行的backtrace信息。<br>
+如果这个动态内存没有被释放掉，则这个列是空的。
+</li>
+</ul>
+</td>
+</tr>
+
+
+
+<tr align="center">
 <td style="vertical-align: top;"><br>
 </td>
 </tr>
