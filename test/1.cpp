@@ -125,6 +125,8 @@ int
 main(int argc,char *argv[],char *envp[])
 {
     void *a=malloc(20);
+
+    a = realloc(a, 30);
 	test3::init();
 
 	test3::a->b();
