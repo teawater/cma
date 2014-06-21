@@ -156,17 +156,17 @@ def record_save():
     f.write(file_header)
     cur = time.time()
 
-    for addr in no_released:
-        line = "'%s', '0x%x', '%d', '%f', '%s', ''" %("new" if no_released[addr][3] else "malloc", addr, no_released[addr][0], cur - no_released[addr][2], no_released[addr][1])
+    for addr in not_released:
+        line = "'%s', '0x%x', '%d', '%f', '%s', ''" %(not_released[addr][3], addr, not_released[addr][0], cur - not_released[addr][2], not_released[addr][1])
         if record_bt:
-            line += ", '%s', ''" %no_released[addr][4]
+            line += ", '%s', ''" %not_released[addr][4]
         line += "\n"
         f.write(line)
 
     f.write("\n")
 
     for e in released:
-        line = "'%s', '0x%x', '%d', '%f', '%s', '%s'" %("new" if e[5] else "malloc", e[0], e[1], e[4], e[2], e[3])
+        line = "'%s', '0x%x', '%d', '%f', '%s', '%s'" %(e[5], e[0], e[1], e[4], e[2], e[3])
         if record_bt:
             line += ", '%s', '%s'" %(e[6], e[7])
         line += "\n"
@@ -174,17 +174,69 @@ def record_save():
     f.close()
     print(lang.string('Memory infomation saved into "%s".') %record_dir)
 
-def init_file_header():
+def file_header_init():
     global file_header
     file_header = "'" + lang.string("Type") + "', '" + lang.string("Address") + "', '" + lang.string("Size") + "', '" + lang.string("Existence time(sec)") + "', '" + lang.string("Allocate line") + "', '" + lang.string("Release line") + "'"
     if record_bt:
         file_header += ", '" + lang.string("Allocate backtrace") + "', '" + lang.string("Release backtrace") + "'"
     file_header += "\n"
 
-# Format: size, line, time, is_new, [bt]
-no_released = {}
-# Format: addr, size, allocate_line, release_line, time, is_new, [allocate_bt, release_bt]
+# Format: size, line, time, memtype, [bt]
+not_released = {}
+
+def not_released_add(addr, size, memtype, line=None, bt=None):
+    global not_released
+
+    if addr in not_released:
+        if line == None:
+            line = str(gdb.execute("info line", True, True)).strip()
+        if bt == None:
+            bt = str(gdb.execute("info line", True, True)).strip()
+        print(lang.string("Error in not_released_add addr 0x%x old: %s new: %d, %s, %s, %s.  Please report this message to https://github.com/teawater/cma/issues/.") %(addr, not_released[addr], size, memtype, line, bt))
+
+    not_released[addr] = []
+    not_released[addr].append(size)
+    if line == None:
+        not_released[addr].append(str(gdb.execute("info line", True, True)).strip())
+    else:
+        not_released[addr].append(line)
+    if record_bt and bt == None:
+        bt = str(gdb.execute("backtrace", True, True)).strip()
+    not_released[addr].append(time.time())
+    not_released[addr].append(memtype)
+    if record_bt:
+        not_released[addr].append(bt)
+
+# Format: addr, size, allocate_line, release_line, time, memtype, [allocate_bt, release_bt]
 released = []
+
+def released_add(addr, memtype, line=None, bt=None):
+    global not_released, released
+
+    if addr in not_released:
+        if record_released:
+            cur_time = time.time()
+            if line == None:
+                gdb.execute("up", False, True)
+                line = str(gdb.execute("info line", True, True)).strip()
+                gdb.execute("down", False, True)
+
+            if not_released[addr][3] != memtype:
+                if bt == None:
+                    bt = str(gdb.execute("backtrace", True, True)).strip()
+                print(lang.string("Error in released_add addr 0x%x old: %s new: %s, %s, %s.  Please report this message to https://github.com/teawater/cma/issues/.") %(addr, not_released[addr], memtype, line, bt))
+                return
+
+            add = [addr, not_released[addr][0], not_released[addr][1], line, cur_time - not_released[addr][2], not_released[addr][3]]
+            if record_bt:
+                add.append(not_released[addr][4])
+                if bt == None:
+                    add.append(str(gdb.execute("backtrace", True, True)).strip())
+                else:
+                    add.append(bt)
+            released.append(add)
+        del not_released[addr]
+
 #-----------------------------------------------------------------------
 # Functions about signal
 def sigint_handler(num=None, e=None):
@@ -227,12 +279,100 @@ class arch_x86_64(object):
 archs = (arch_x86_32, arch_x86_64)
 
 #-----------------------------------------------------------------------
-def function_is_available(fun):
-    s = gdb.execute("b " + fun, False, True)
-    error_s = 'Function "' + fun + '" not defined.'
-    if s[:len(error_s)] == error_s:
+# The language class
+class Break(object):
+    def __init__(self, name, re=None, trigger=None, memtype=None):
+        s = gdb.execute("b " + name, False, True)
+        error_s = 'Function "' + name + '" not defined.'
+        if s[:len(error_s)] == error_s:
+            raise Exception("%s not defined." %name)
+        self.name = name
+        if re == None:
+            self.re = name
+        else:
+            self.re = re
+        if trigger == None:
+            self.trigger = self.re
+        else:
+            self.trigger = trigger
+        if memtype == None:
+            self.memtype = name
+        else:
+            self.memtype = memtype
+    def is_triggered(self, s):
+        if s == self.trigger:
+            return True
         return False
-    return True
+
+class Break_alloc(Break):
+    def event(self):
+        size = arch.get_arg1()
+        gdb.execute("disable", False, False)
+        gdb.execute("finish", False, True)
+        gdb.execute("enable", False, False)
+        not_released_add(arch.get_ret(), size, self.memtype)
+
+class Break_release(Break):
+    def event(self):
+        released_add(arch.get_arg1(), self.memtype)
+        gdb.execute("disable", False, False)
+        gdb.execute("finish", False, True)
+        gdb.execute("enable", False, False)
+
+breaks = []
+breaks_re = ""
+
+def breaks_init():
+    global breaks, breaks_re
+
+    while True:
+        break_is_available = False
+
+        # Clear old breakppints.
+        gdb.execute("delete")
+
+        try:
+            b = Break_alloc("malloc", "<malloc")
+        except:
+            record_malloc = False
+        else:
+            break_is_available = True
+            record_malloc = yes_no(lang.string("Do you want to record memory function malloc/free?"), True)
+        if record_malloc:
+            breaks.append(b)
+            try:
+                b = Break_release("free", "<free", memtype="malloc")
+                breaks.append(b)
+            except:
+                pass
+
+        try:
+            b = Break_alloc("operator new", r'<operator new\(', '<operator new(', 'new')
+        except:
+            record_new = False
+        else:
+            break_is_available = True
+            record_new = yes_no(lang.string("Do you want to record memory function new/delete?"), True)
+        if record_new:
+            breaks.append(b)
+            try:
+                b = Break_release("operator delete", r'<operator delete\(', '<operator delete(', 'new')
+                breaks.append(b)
+            except:
+                pass
+
+        if len(breaks) != 0:
+            break
+
+        if not break_is_available:
+            raise Exception(lang.string("Allocate functions are not available."))
+
+    breaks_re = "("
+    for b in breaks:
+        if breaks_re != "(":
+            breaks_re += "|"
+        breaks_re += b.re
+    breaks_re += ")"
 
 #-----------------------------------------------------------------------
 # Real main code
@@ -243,6 +383,7 @@ gdb.execute("set pagination off", False, False)
 try:
     gdb.execute("info reg", True, True)
 except gdb.error, x:
+    gdb.execute("delete")
     gdb.execute("start", True, True)
 
 # Get arch.
@@ -252,15 +393,6 @@ for e in archs:
         break
 else:
     raise Exception("Current architecture is not supported by CMA.")
-
-# Check if current application has malloc and new.
-have_malloc = function_is_available("malloc")
-have_new = function_is_available("operator new")
-if not have_malloc and not have_new:
-    raise Exception("Inferior doesn't have new and malloc.")
-
-# Clear old breakppints.
-gdb.execute("delete")
 
 # Load config
 default_config_dir = os.path.realpath("./cma.conf")
@@ -311,36 +443,11 @@ config_check_show("misc", "record_bt", get_record_bt_callback, lang.string('Scri
 record_bt = bool(Config.get("misc", "record_bt"))
 config_write()
 
-init_file_header()
+file_header_init()
 
-# Get memory_function.
-# 0 malloc
-# 1 new
-# 2 malloc and new
-if have_malloc and have_new:
-    m = select_from_list(("malloc/free and new/delete", "malloc/free", "new/delete"), "", lang.string("Which memory function do you want to record?"))
-    if m == "malloc/free and new/delete":
-        memory_function = 2
-    elif m == "malloc/free":
-        memory_function = 0
-    else:
-        memory_function = 1
-elif have_malloc:
-    memory_function = 0
-    print(lang.string('Script will record memory function "%s".') %"malloc/free")
-else:
-    memory_function = 1
-    print(lang.string('Script will record memory function "%s".') %"new/delete")
+breaks_init()
 
 run = True
-
-# Setup breakpoint
-if memory_function == 0 or memory_function == 2:
-    gdb.execute("b malloc", False, False)
-    gdb.execute("b free", False, False)
-if memory_function == 1 or memory_function == 2:
-    gdb.execute("b operator new", False, False)
-    gdb.execute("b operator delete", False, False)
 
 # Setup signal handler
 signal.signal(signal.SIGINT, sigint_handler);
@@ -355,65 +462,15 @@ while run:
         print(lang.string("Inferior exec failed:"), x)
         break
 
-    r = re.search(r'(<malloc|<free|<operator new\(|<operator delete\()', s)
+    r = re.search(breaks_re, s)
     if not bool(r):
         continue
     r = r.group(1)
 
-    if memory_function == 0 or memory_function == 2:
-        if r == "<malloc":
-            is_alloc = True
-            is_new = False
-        elif r == "<free":
-            is_alloc = False
-            is_new = False
-    if memory_function == 1 or memory_function == 2:
-        if r == "<operator new(":
-            is_alloc = True
-            is_new = True
-        elif r == "<operator delete(":
-            is_alloc = False
-            is_new = True
-
-    if is_alloc:
-        # alloc size
-        size = arch.get_arg1()
-        gdb.execute("disable", False, False)
-        gdb.execute("finish", False, True)
-        gdb.execute("enable", False, False)
-        # alloc addr
-        addr = arch.get_ret()
-        # alloc size
-        no_released[addr] = []
-        no_released[addr].append(size)
-        # alloc line
-        no_released[addr].append(str(gdb.execute("info line", True, True)).strip())
-        # alloc bt to bt
-        if record_bt:
-            bt = str(gdb.execute("backtrace", True, True)).strip()
-        no_released[addr].append(time.time())
-        no_released[addr].append(is_new)
-        if record_bt:
-            no_released[addr].append(bt)
-    else:
-        # release addr
-        addr = arch.get_arg1()
-        if addr in no_released:
-            if record_released:
-                cur_time = time.time()
-                gdb.execute("up", False, True)
-                # addr, size, allocate_line, release_line, time
-                add = [addr, no_released[addr][0], no_released[addr][1], str(gdb.execute("info line", True, True)).strip(), cur_time - no_released[addr][2], no_released[addr][3]]
-                # bt
-                if record_bt:
-                    add.append(no_released[addr][4])
-                    add.append(str(gdb.execute("backtrace", True, True)).strip())
-                released.append(add)
-                gdb.execute("down", False, True)
-            del no_released[addr]
-        gdb.execute("disable", False, False)
-        gdb.execute("finish", False, True)
-        gdb.execute("enable", False, False)
+    for b in breaks:
+        if b.is_triggered(r):
+            b.event()
+            break
 
 record_save()
 
