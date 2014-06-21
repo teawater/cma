@@ -261,8 +261,13 @@ class arch_x86_32(object):
         if gdb.execute("info reg", True, True).find("eax") >= 0:
             return True
         return False
-    def get_arg1(self):
-        return long(gdb.parse_and_eval("*(unsigned long *)($ebp+8)"))
+    def get_arg(self, num):
+        if num >= 1:
+            raise Exception("get_arg %d is not supported." %num)
+        gdb.execute("up", False, True)
+        ret = long(gdb.parse_and_eval("*(unsigned int *)($esp + " + str(num * 4) + ")"))
+        gdb.execute("down", False, True)
+        return ret
     def get_ret(self):
         return long(gdb.parse_and_eval("$eax"))
 
@@ -271,28 +276,43 @@ class arch_x86_64(object):
         if gdb.execute("info reg", True, True).find("rax") >= 0:
             return True
         return False
-    def get_arg1(self):
-        return long(gdb.parse_and_eval("$rdi"))
+    def get_arg(self, num):
+        if num == 0:
+            return long(gdb.parse_and_eval("$rdi"))
+        elif num == 1:
+            return long(gdb.parse_and_eval("$rsi"))
+        else:
+            raise Exception("get_arg %d is not supported." %num)
     def get_ret(self):
         return long(gdb.parse_and_eval("$rax"))
 
 archs = (arch_x86_32, arch_x86_64)
 
 #-----------------------------------------------------------------------
-# The language class
+# The Break class
+class BreakException(Exception):
+    pass
+
 class Break(object):
-    def __init__(self, name, re=None, trigger=None, memtype=None):
+    def __init__(self, name, res=None, trigger=None, memtype=None):
+        ''' name: The break command will set to it.
+            res: Regular expression for the name to get the string about this break.  If None, it will set to "name".
+            trigger: After regular expression, the string for this break.  If None, it will set to "res".
+            memtype: The memory type for this break.  If None, it will set to "name".
+        '''
+        got_break = False
         s = gdb.execute("b " + name, False, True)
         error_s = 'Function "' + name + '" not defined.'
         if s[:len(error_s)] == error_s:
-            raise Exception("%s not defined." %name)
+            raise BreakException
+
         self.name = name
-        if re == None:
-            self.re = name
+        if res == None:
+            self.res = name
         else:
-            self.re = re
+            self.res = res
         if trigger == None:
-            self.trigger = self.re
+            self.trigger = self.res
         else:
             self.trigger = trigger
         if memtype == None:
@@ -306,7 +326,7 @@ class Break(object):
 
 class Break_alloc(Break):
     def event(self):
-        size = arch.get_arg1()
+        size = arch.get_arg(0)
         gdb.execute("disable", False, False)
         gdb.execute("finish", False, True)
         gdb.execute("enable", False, False)
@@ -314,7 +334,9 @@ class Break_alloc(Break):
 
 class Break_release(Break):
     def event(self):
-        released_add(arch.get_arg1(), self.memtype)
+        if self.memtype == "new":
+            print "teawater"
+        released_add(arch.get_arg(0), self.memtype)
         gdb.execute("disable", False, False)
         gdb.execute("finish", False, True)
         gdb.execute("enable", False, False)
@@ -333,7 +355,7 @@ def breaks_init():
 
         try:
             b = Break_alloc("malloc", "<malloc")
-        except:
+        except BreakException:
             record_malloc = False
         else:
             break_is_available = True
@@ -348,7 +370,7 @@ def breaks_init():
 
         try:
             b = Break_alloc("operator new", r'<operator new\(', '<operator new(', 'new')
-        except:
+        except BreakException:
             record_new = False
         else:
             break_is_available = True
@@ -365,13 +387,13 @@ def breaks_init():
             break
 
         if not break_is_available:
-            raise Exception(lang.string("Allocate functions are not available."))
+            raise Exception(lang.string("Cannot find any dynamic memory allocate functions."))
 
     breaks_re = "("
     for b in breaks:
         if breaks_re != "(":
             breaks_re += "|"
-        breaks_re += b.re
+        breaks_re += b.res
     breaks_re += ")"
 
 #-----------------------------------------------------------------------
