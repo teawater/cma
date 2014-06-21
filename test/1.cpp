@@ -133,7 +133,7 @@ main(int argc,char *argv[],char *envp[])
 
 	delete test3::a;
 	//delete test3::b;
-    //free(a);
+    free(a);
 
 	while(1);
 
