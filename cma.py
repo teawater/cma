@@ -191,7 +191,7 @@ def not_released_add(addr, size, memtype, line=None, bt=None):
         if line == None:
             line = str(gdb.execute("info line", True, True)).strip()
         if bt == None:
-            bt = str(gdb.execute("info line", True, True)).strip()
+            bt = str(gdb.execute("backtrace", True, True)).strip()
         print(lang.string("Error in not_released_add addr 0x%x old: %s new: %d, %s, %s, %s.  Please report this message to https://github.com/teawater/cma/issues/.") %(addr, not_released[addr], size, memtype, line, bt))
 
     not_released[addr] = []
