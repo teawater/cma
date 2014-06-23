@@ -346,6 +346,14 @@ class Break_alloc(Break):
         gdb.execute("enable", False, False)
         not_released_add(arch.get_ret(), size, self.memtype)
 
+class Break_calloc(Break):
+    def event(self):
+        size = arch.get_arg(0) * arch.get_arg(1)
+        gdb.execute("disable", False, False)
+        gdb.execute("finish", False, True)
+        gdb.execute("enable", False, False)
+        not_released_add(arch.get_ret(), size, self.memtype)
+
 class Break_release(Break):
     def event(self):
         if self.memtype == "new":
@@ -376,6 +384,11 @@ def breaks_init():
             record_malloc = yes_no(lang.string("Do you want to record memory function malloc/free?"), True)
         if record_malloc:
             breaks.append(b)
+            try:
+                b = Break_calloc("calloc", "<calloc", memtype="malloc")
+                breaks.append(b)
+            except:
+                pass
             try:
                 b = Break_release("free", "<free", memtype="malloc")
                 breaks.append(b)
