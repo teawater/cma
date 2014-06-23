@@ -360,10 +360,17 @@ class Break_calloc(Break):
         gdb.execute("enable", False, False)
         not_released_add(arch.get_ret(), size, self.memtype)
 
+class Break_realloc(Break):
+    def event(self):
+        released_add(arch.get_arg(0), self.memtype)
+        size = arch.get_arg(1)
+        gdb.execute("disable", False, False)
+        gdb.execute("finish", False, True)
+        gdb.execute("enable", False, False)
+        not_released_add(arch.get_ret(), size, self.memtype)
+
 class Break_release(Break):
     def event(self):
-        if self.memtype == "new":
-            print "teawater"
         released_add(arch.get_arg(0), self.memtype)
         gdb.execute("disable", False, False)
         gdb.execute("finish", False, True)
@@ -393,12 +400,17 @@ def breaks_init():
             try:
                 b = Break_calloc("calloc", "<calloc", memtype="malloc")
                 breaks.append(b)
-            except:
+            except BreakException:
+                pass
+            try:
+                b = Break_realloc("realloc", "<realloc", memtype="malloc")
+                breaks.append(b)
+            except BreakException:
                 pass
             try:
                 b = Break_release("free", "<free", memtype="malloc")
                 breaks.append(b)
-            except:
+            except BreakException:
                 pass
 
         try:
@@ -413,7 +425,7 @@ def breaks_init():
             try:
                 b = Break_release("operator delete", r'<operator delete\(', '<operator delete(', 'new')
                 breaks.append(b)
-            except:
+            except BreakException:
                 pass
 
         if len(breaks) != 0:
