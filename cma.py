@@ -424,6 +424,21 @@ def breaks_init():
             except BreakException:
                 pass
 
+        try:
+            b = Break_alloc("kmalloc", "<kmalloc")
+        except BreakException:
+            record_kmalloc = False
+        else:
+            break_is_available = True
+            record_kmalloc = yes_no(lang.string("Do you want to record memory function kmalloc/kfree?"), True)
+        if record_kmalloc:
+            breaks[b.trigger] = b
+            try:
+                b = Break_release("kfree", "<kfree", memtype="kmalloc")
+                breaks[b.trigger] = b
+            except BreakException:
+                pass
+
         if len(breaks) != 0:
             break
 
