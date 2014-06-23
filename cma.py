@@ -339,10 +339,6 @@ class Break(object):
             self.memtype = name
         else:
             self.memtype = memtype
-    def is_triggered(self, s):
-        if s == self.trigger:
-            return True
-        return False
 
 class Break_alloc(Break):
     def event(self):
@@ -376,7 +372,7 @@ class Break_release(Break):
         gdb.execute("finish", False, True)
         gdb.execute("enable", False, False)
 
-breaks = []
+breaks = {}
 breaks_re = ""
 
 def breaks_init():
@@ -396,20 +392,20 @@ def breaks_init():
             break_is_available = True
             record_malloc = yes_no(lang.string("Do you want to record memory function malloc/free?"), True)
         if record_malloc:
-            breaks.append(b)
+            breaks[b.trigger] = b
             try:
                 b = Break_calloc("calloc", "<calloc", memtype="malloc")
-                breaks.append(b)
+                breaks[b.trigger] = b
             except BreakException:
                 pass
             try:
                 b = Break_realloc("realloc", "<realloc", memtype="malloc")
-                breaks.append(b)
+                breaks[b.trigger] = b
             except BreakException:
                 pass
             try:
                 b = Break_release("free", "<free", memtype="malloc")
-                breaks.append(b)
+                breaks[b.trigger] = b
             except BreakException:
                 pass
 
@@ -421,10 +417,10 @@ def breaks_init():
             break_is_available = True
             record_new = yes_no(lang.string("Do you want to record memory function new/delete?"), True)
         if record_new:
-            breaks.append(b)
+            breaks[b.trigger] = b
             try:
                 b = Break_release("operator delete", r'<operator delete\(', '<operator delete(', 'new')
-                breaks.append(b)
+                breaks[b.trigger] = b
             except BreakException:
                 pass
 
@@ -435,10 +431,10 @@ def breaks_init():
             raise Exception(lang.string("Cannot find any dynamic memory allocate functions."))
 
     breaks_re = "("
-    for b in breaks:
+    for i in breaks:
         if breaks_re != "(":
             breaks_re += "|"
-        breaks_re += b.res
+        breaks_re += breaks[i].res
     breaks_re += ")"
     breaks_re = re.compile(breaks_re)
 
@@ -533,12 +529,7 @@ while run:
     r = breaks_re.search(s)
     if not bool(r):
         continue
-    r = r.group(1)
-
-    for b in breaks:
-        if b.is_triggered(r):
-            b.event()
-            break
+    breaks[r.group(1)].event()
 
 record_save()
 
