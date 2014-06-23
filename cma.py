@@ -148,12 +148,18 @@ def config_check_show(section, option, callback, show1=None, show2=None):
             else:
                 print show2
 #-----------------------------------------------------------------------
-def get_info_line():
+def get_info_line(current):
     ret = ""
+    is_first_loop = True
     while True:
-        s = str(gdb.execute("up", False, True)).strip()
-        if s == "Initial frame selected; you cannot go up." and ret != "":
-            break
+        if not current or not is_first_loop:
+            try:
+                gdb.execute("up", False, True)
+            except gdb.error:
+                raise Exception
+                if ret != "":
+                    break
+            is_first_loop = False
         s = str(gdb.execute("info line *$pc", True, True)).strip()
         error_s = 'No line number information available'
         if s[:len(error_s)] != error_s:
@@ -205,7 +211,7 @@ def not_released_add(addr, size, memtype, line=None, bt=None):
 
     if addr in not_released:
         if line == None:
-            line = get_info_line()
+            line = get_info_line(True)
         if bt == None:
             bt = str(gdb.execute("backtrace", True, True)).strip()
         print(lang.string("Error in not_released_add addr 0x%x old: %s new: %d, %s, %s, %s.  Please report this message to https://github.com/teawater/cma/issues/.") %(addr, not_released[addr], size, memtype, line, bt))
@@ -213,7 +219,7 @@ def not_released_add(addr, size, memtype, line=None, bt=None):
     not_released[addr] = []
     not_released[addr].append(size)
     if line == None:
-        not_released[addr].append(get_info_line())
+        not_released[addr].append(get_info_line(True))
     else:
         not_released[addr].append(line)
     if record_bt and bt == None:
@@ -233,7 +239,7 @@ def released_add(addr, memtype, line=None, bt=None):
         if record_released:
             cur_time = time.time()
             if line == None:
-                line = get_info_line()
+                line = get_info_line(False)
 
             if not_released[addr][3] != memtype:
                 if bt == None:
