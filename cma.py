@@ -440,6 +440,7 @@ def breaks_init():
             breaks_re += "|"
         breaks_re += b.res
     breaks_re += ")"
+    breaks_re = re.compile(breaks_re)
 
 #-----------------------------------------------------------------------
 # Real main code
@@ -529,7 +530,7 @@ while run:
         print(lang.string("Inferior exec failed:"), x)
         break
 
-    r = re.search(breaks_re, s)
+    r = breaks_re.search(s)
     if not bool(r):
         continue
     r = r.group(1)
