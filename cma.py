@@ -282,7 +282,7 @@ class arch_x86_32(object):
             return True
         return False
     def get_arg(self, num):
-        if num >= 1:
+        if num > 1:
             raise Exception("get_arg %d is not supported." %num)
         gdb.execute("up", False, True)
         ret = long(gdb.parse_and_eval("*(unsigned int *)($esp + " + str(num * 4) + ")"))
