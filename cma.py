@@ -390,7 +390,7 @@ def breaks_init():
             record_malloc = False
         else:
             break_is_available = True
-            record_malloc = yes_no(lang.string("Do you want to record memory function malloc/free?"), True)
+            record_malloc = yes_no(lang.string("Do you want to record memory function malloc/calloc/realloc/free?"), True)
         if record_malloc:
             breaks[b.trigger] = b
             try:
