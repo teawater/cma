@@ -9,6 +9,12 @@ int
 main(int argc,char *argv[])
 {
 	int **i,j;
+	char	a[] = "123";
+	char    *b, *c;
+
+	b = strdup(a);
+	c = strdup(a);
+
 	i=calloc(sizeof(int *),100);
 	for(j=0;j<20;j++) {
 		i[j]=&j;
@@ -17,6 +23,7 @@ main(int argc,char *argv[])
 		printf("%d\n",*(i[j]));
 	}
 	free(i);
+	free(b);
 
 	exit(0);
 }
