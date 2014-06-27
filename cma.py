@@ -539,7 +539,8 @@ while run:
         gdb.execute("continue", True)
         s = str(gdb.parse_and_eval("$pc"))
     except gdb.error, x:
-        print(lang.string("Inferior exec failed:"), x)
+        if str(x) != 'No registers.':
+            print(lang.string("Inferior exec failed:"), x)
         break
 
     r = breaks_re.search(s)
