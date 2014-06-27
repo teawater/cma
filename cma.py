@@ -152,14 +152,15 @@ def get_info_line(current):
     ret = ""
     is_first_loop = True
     while True:
-        if not current or not is_first_loop:
+        if current and is_first_loop:
+	    is_first_loop = False
+	else:
             try:
                 gdb.execute("up", False, True)
             except gdb.error:
                 raise Exception
                 if ret != "":
                     break
-            is_first_loop = False
         s = str(gdb.execute("info line *$pc", True, True)).strip()
         error_s = 'No line number information available'
         if s[:len(error_s)] != error_s:
@@ -173,7 +174,7 @@ def get_info_line(current):
 # Functions about record file
 def record_save():
     # File format:
-    # new/malloc, addr, size, existence time, allocate line, release line, [allocate bt, release bt]
+    # type, addr, size, existence time, allocate line, release line, [allocate bt, release bt]
     f = open(record_dir, "w")
     f.write(file_header)
     cur = time.time()
