@@ -153,8 +153,8 @@ def get_info_line(current):
     is_first_loop = True
     while True:
         if current and is_first_loop:
-	    is_first_loop = False
-	else:
+            is_first_loop = False
+        else:
             try:
                 gdb.execute("up", False, True)
             except gdb.error:
