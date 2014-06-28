@@ -40,8 +40,8 @@ class Lang(object):
                  '记录内存信息到“%s”。')
         self.add("Continue.",
                  "继续。")
-        self.add('Quit.',
-                 '退出。')
+        self.add('Quit and record memory infomation to "%s".',
+                 '退出并记录内存信息到“%s”。')
         self.add("Which operation?",
                  "哪个操作？")
         self.add("Inferior exec failed:",
@@ -58,10 +58,14 @@ class Lang(object):
                  '脚本将记录backtrace信息。')
         self.add('Script will not backtrace infomation.',
                  '脚本将不记录backtrace信息。')
-        self.add("Which memory function do you want to record?",
-                 "记录哪个内存函数？")
-        self.add('Script will record memory function "%s".',
-                 '脚本将记录内存函数“%s”。')
+        self.add("Do you want to record memory function malloc/calloc/realloc/free?",
+                 '是否记录内存函数malloc/calloc/realloc/free？')
+        self.add("Do you want to record memory function new/delete?",
+                 '是否记录内存函数new/delete？')
+        self.add("Do you want to record memory function kmalloc/kfree?",
+                 '是否记录内存函数kmalloc/kfree？')
+        self.add("Cannot find any dynamic memory allocate functions.",
+                 "无法找到任何动态内存分配函数。")
 
     def set_language(self, language):
         if language != "":
@@ -271,7 +275,7 @@ def sigint_handler(num=None, e=None):
 
     s_operations = (lang.string('Record memory infomation to "%s".') %record_dir,
                     lang.string("Continue."),
-                    lang.string('Quit.'))
+                    lang.string('Quit and record memory infomation to "%s".') %record_dir)
     a = select_from_list(s_operations, s_operations[0], lang.string("Which operation?"))
     if a == s_operations[0]:
         record_save()
