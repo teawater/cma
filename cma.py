@@ -540,8 +540,7 @@ breaks_init()
 run = True
 
 # Setup signal handler
-signal.signal(signal.SIGINT, sigint_handler)
-signal.siginterrupt(signal.SIGINT, False)
+signal.signal(signal.SIGINT, signal.SIG_IGN)
 gdb.events.stop.connect(inferior_sig_handler)
 
 while run:
