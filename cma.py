@@ -210,6 +210,9 @@ not_released = {}
 def not_released_add(addr, size, memtype, line=None, bt=None):
     global not_released
 
+    if addr == 0:
+        return
+
     if addr in not_released:
         if line == None:
             line = get_info_line(True)
@@ -235,6 +238,9 @@ released = []
 
 def released_add(addr, memtype, line=None, bt=None):
     global not_released, released
+
+    if addr == 0:
+        return
 
     if addr in not_released:
         if record_released:
