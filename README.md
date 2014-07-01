@@ -14,8 +14,11 @@ CMA supports X86_32 and X86_64.
 ## How to use CMA?
 
 1.  CMA just can work with GDB 7.5 or newer version. You can use Get-GDB check the version of GDB in current system and get GDB 7.5 or newer version if need.
-        wget https://raw.githubusercontent.com/teawater/get-gdb/master/get-gdb.py
-        python get-gdb.py
+
+    ```
+wget https://raw.githubusercontent.com/teawater/get-gdb/master/get-gdb.py
+python get-gdb.py
+    ```
 
 2.  Get CMA.
 
@@ -52,9 +55,9 @@ attach pid
 
     It will let you input some options. Then, exencute application and analyzes its memory allocate and release.
 
-        ```
+    ```
 source cma.py
-        ```
+    ```
 
 6.  When CMA script and application is running, you can use CTRL-C interrupt their execution. Then, you can let CMA script save record to a CSV file.
     CSV file can be read by Openoffice or Excel.
