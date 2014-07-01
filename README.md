@@ -1,228 +1,120 @@
 CMA http://teawater.github.io/cma/
-===
-<div style="text-align: center;">
-<a href="indexcn.html">Chinese</a><br>
-</div>
-<br>
-<table
-style="text-align: left; width: 60%; margin-left: auto; margin-right: auto;"
-border="1" cellpadding="0" cellspacing="0">
+=============
 
-<tr align="center">
-<td style="vertical-align: top;">What is CMA?<br>
-</td>
-</tr>
-<tr>
-<td style="vertical-align: top;">A GDB Python script that analyzes and records C/C++ application's dynamic memory status.<br>CMA has little effect on analyzed C/C++ application performance. <br>
+## [*Chinese*] (http://teawater.github.io/cma/indexcn.html)
+
+## What is CMA?
+
+A GDB Python script that analyzes and records C/C++ application's dynamic memory status.
+
+CMA has little effect on analyzed C/C++ application performance. 
+
 CMA supports X86_32 and X86_64.
-</td>
-</tr>
-<tr align="center">
-<td style="vertical-align: top;"><br>
-</td>
-</tr>
-<tr align="center">
-<td style="vertical-align: top;">How to use CMA?<br>
-</td>
-</tr>
-<tr>
-<td style="vertical-align: top;">
-<ol>
-   <li> CMA just can work with GDB 7.5 or newer version.  You can use <a href="http://teawater.github.io/get-gdb/">Get-GDB</a> check the version of GDB in current system and get GDB 7.5 or newer version if need.
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
-wget https://raw.githubusercontent.com/teawater/get-gdb/master/get-gdb.py<br>
-python get-gdb.py
-</td>
-</tbody>
-</table>
-</li>
-   <li> Get CMA.
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+
+## How to use CMA?
+
+1.  CMA just can work with GDB 7.5 or newer version. You can use Get-GDB check the version of GDB in current system and get GDB 7.5 or newer version if need.
+        wget https://raw.githubusercontent.com/teawater/get-gdb/master/get-gdb.py
+        python get-gdb.py
+
+2.  Get CMA.
+
+    ```
 wget https://raw.githubusercontent.com/teawater/cma/master/cma.py
-</td>
-</tbody>
-</table>
-</li>
+    ```
 
-<li>
-C/C++ application that want to analyzes should be built with GCC "-g" option to get the memory allocate and release code line infomation.
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
-gcc -g xxx<br>
+3.  C/C++ application that want to analyzes should be built with GCC "-g" option to get the memory allocate and release code line infomation.
+
+    ```
+gcc -g xxx
 g++ -g xxx
-</td>
-</tbody>
-</table>
-</li>
+    ```
 
-<li>
-GDB control the C/C++ application that want to analyzes.<br>
-There are some ways:
-<ul>
-   <li> Open GDB with a application.  Don't need execute application because CMA script will auto do it if need.
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+4.  GDB control the C/C++ application that want to analyzes.
+    There are some ways:
+    *  Open GDB with a application. Don't need execute application because CMA script will auto do it if need.
+
+        ```
 gdb xxx
-</td>
-</tbody>
-</table>
-</li>
-<li>
-Attach a running application.
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+        ```
+
+    *  Attach a running application.
+        ```
 gdb -p pid
-</td>
-</tbody>
-</table>
-Or
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
-gdb<br>
+        ```
+       Or
+        ```
+gdb
 attach pid
-</td>
-</tbody>
-</table>
+        ```
 
-</li>
- </ul>
-</li>
+5.  Start CMA script inside GDB.
 
-<li>
-Start CMA script inside GDB.<br>
-It will let you input some options.  Then, exencute application and analyzes its memory allocate and release.
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
+    It will let you input some options. Then, exencute application and analyzes its memory allocate and release.
+
+        ```
 source cma.py
-</td>
-</tbody>
-</table>
-</li>
+        ```
 
-<li>
-When CMA script and application is running, you can use CTRL-C interrupt their execution. Then, you can let CMA script save record to a CSV file.<br>
-CSV file can be read by Openoffice or Excel.
-<table
-style="text-align: left; width: 90%;"
-border="0" cellpadding="0" cellspacing="0">
-<tbody>
-<tr>
-<td style="vertical-align: top; background-color: rgb(238, 238, 238);">
-[0] Record memory infomation to "/home/teawater/tmp/cma.csv".<br>
-[1] Continue.<br>
-[2] Quit.<br>
-Which operation?[0]<br>
-Memory infomation saved into "/home/teawater/tmp/cma.csv".<br>
+6.  When CMA script and application is running, you can use CTRL-C interrupt their execution. Then, you can let CMA script save record to a CSV file.
+    CSV file can be read by Openoffice or Excel.
+    ```
+[0] Record memory infomation to "/home/teawater/tmp/cma.csv".
+[1] Continue.
+[2] Quit and record memory infomation to "/home/teawater/tmp/cma.csv".
+Which operation?[0]
+Memory infomation saved into "/home/teawater/tmp/cma.csv".
 Continuing.
-</td>
-</tbody>
-</table>
-</li>
-</ol>
-</td>
-</tr>
+    ```
 
-<tr align="center">
-<td style="vertical-align: top;"><br>
-</td>
-</tr>
+## The CSV file that is generated by CMA script
 
-<tr align="center">
-<td style="vertical-align: top;">The CSV file that is generated by CMA script<br>
-</td>
-</tr>
-
-<tr>
-<td style="vertical-align: top;">
-Btween the not released dynamic memories and the released dynamic memories have a blank line.<br><br>
+Btween the not released dynamic memories and the released dynamic memories have a blank line.
 
 The columns:
-<ul>
-<li>
-<b>Type</b><br>
-The dynamic memory type is new or malloc.  CMA script can record them in same time.
-</li>
-<li>
-<b>Address</b><br>
-The address of a dynamic memory.
-</li>
-<li>
-<b>Size</b><br>
-The size of a dynamic memory.
-</li>
-<li>
-<b>Existence time(sec)</b><br>
-The existence time of a dynamic memory in second.<br>
-If this dynamic memory is released, it is time from allocate this dynamic memory to release this dynamic memory.<br>
-If this dynamic memory is not released, it is time from allocate this dynamic memory to current time.<br>
-</li>
-<li>
-<b>Allocate line</b><br>
-The code line infomation of a dynamic memory is allocated.
-</li>
-<li>
-<b>Release line</b><br>
-The code line infomation of a dynamic memory is allocated.<br>
-If this dynamic memory is not released, this column is empty.
-</li>
-<li>
-<b>Allocate backtrace</b><br>
-The backtrace infomation of a dynamic memory is allocated.
-</li>
-<li>
-<b>Release backtrace</b><br>
-The backtrace infomation of a dynamic memory is allocated.<br>
-If this dynamic memory is not released, this column is empty.
-</li>
-</ul>
-</td>
-</tr>
 
-<tr align="center">
-<td style="vertical-align: top;"><br>
-</td>
-</tr>
+*  *Type*
 
-<tr align="center">
-<td style="vertical-align: top;">Screenshot<br>
-</td>
-</tr>
+   The dynamic memory type is new or malloc. CMA script can record them in same time.
 
-<tr align="center">
-<td style="vertical-align: top;">This is a screenshot of a CSV file.<br>
-<a href="http://teawater.github.io/cma/eb.png"><IMG src="http://teawater.github.io/cma/es.png" align="" border="0"></a>
-</td>
-</tr>
+*  *Address*
 
-</tbody>
-</table>
+   The address of a dynamic memory.
+
+*  *Size*
+
+   The size of a dynamic memory.
+
+*  *Existence time(sec)*
+
+   The existence time of a dynamic memory in second.
+
+   If this dynamic memory is released, it is time from allocate this dynamic memory to release this dynamic memory.
+
+   If this dynamic memory is not released, it is time from allocate this dynamic memory to current time.
+
+*  *Allocate line*
+
+   The code line infomation of a dynamic memory is allocated.
+
+*  *Release line*
+
+   The code line infomation of a dynamic memory is allocated.
+
+   If this dynamic memory is not released, this column is empty.
+
+*  *Allocate backtrace*
+
+   The backtrace infomation of a dynamic memory is allocated.
+
+*  *Release backtrace*
+
+   The backtrace infomation of a dynamic memory is allocated.
+
+   If this dynamic memory is not released, this column is empty.
+
+## Screenshot
+
+This is a screenshot of a CSV file.
+
+[![Screenshot](http://teawater.github.io/cma/es.png)](http://teawater.github.io/cma/eb.png)
