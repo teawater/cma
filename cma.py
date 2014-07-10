@@ -162,7 +162,6 @@ def get_info_line(current):
             try:
                 gdb.execute("up", False, True)
             except gdb.error:
-                raise Exception
                 if ret != "":
                     break
         s = str(gdb.execute("info line *$pc", True, True)).strip()
