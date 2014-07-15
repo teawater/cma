@@ -320,6 +320,13 @@ archs = (arch_x86_32, arch_x86_64)
 
 #-----------------------------------------------------------------------
 # The Break class
+def set_breakpoint(name):
+    s = gdb.execute("b " + name, False, True)
+    error_s = 'Function "' + name + '" not defined.'
+    if s[:len(error_s)] == error_s:
+	return False
+    return True
+
 class BreakException(Exception):
     pass
 
@@ -331,10 +338,8 @@ class Break(object):
             memtype: The memory type for this break.  If None, it will set to "name".
         '''
         got_break = False
-        s = gdb.execute("b " + name, False, True)
-        error_s = 'Function "' + name + '" not defined.'
-        if s[:len(error_s)] == error_s:
-            raise BreakException
+        if not set_breakpoint(name):
+	    raise BreakException
 
         self.name = name
         if res == None:
@@ -472,6 +477,8 @@ gdb.execute("set pagination off", False, False)
 try:
     gdb.execute("info reg", True, True)
 except gdb.error, x:
+    if not set_breakpoint("main"):
+        raise Exception("Function main is not available, please start the inferior and let GDB control it before execute the CMA.")
     gdb.execute("delete")
     gdb.execute("start", True, True)
 
