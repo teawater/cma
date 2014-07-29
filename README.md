@@ -9,7 +9,7 @@ A GDB Python script that analyzes and records C/C++ application's dynamic memory
 
 CMA has little effect on analyzed C/C++ application performance. 
 
-CMA supports X86_32 and X86_64.
+CMA supports X86_32, X86_64 and ARM.
 
 ## How to use CMA?
 
