@@ -316,7 +316,22 @@ class arch_x86_64(object):
     def get_ret(self):
         return long(gdb.parse_and_eval("$rax"))
 
-archs = (arch_x86_32, arch_x86_64)
+class arch_arm(object):
+    def is_current(self):
+        if gdb.execute("info reg", True, True).find("cpsr") >= 0:
+            return True
+        return False
+    def get_arg(self, num):
+        if num == 0:
+            return long(gdb.parse_and_eval("$r0"))
+        elif num == 1:
+            return long(gdb.parse_and_eval("$r1"))
+        else:
+            raise Exception("get_arg %d is not supported." %num)
+    def get_ret(self):
+        return long(gdb.parse_and_eval("$r0"))
+
+archs = (arch_x86_32, arch_x86_64, arch_arm)
 
 #-----------------------------------------------------------------------
 # The Break class
